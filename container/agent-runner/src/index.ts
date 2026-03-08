@@ -414,6 +414,36 @@ async function runQuery(
     log(`Additional directories: ${extraDirs.join(', ')}`);
   }
 
+  // Load MCP servers from user settings.json (e.g., Todoist, Google Workspace, QMD)
+  const userMcpServers: Record<string, { command: string; args?: string[]; env?: Record<string, string> }> = {};
+  const userSettingsPath = '/home/node/.claude/settings.json';
+  if (fs.existsSync(userSettingsPath)) {
+    try {
+      const userSettings = JSON.parse(fs.readFileSync(userSettingsPath, 'utf-8'));
+      if (userSettings.mcpServers) {
+        for (const [name, config] of Object.entries(userSettings.mcpServers)) {
+          userMcpServers[name] = config as { command: string; args?: string[]; env?: Record<string, string> };
+          log(`Loaded MCP server from settings: ${name}`);
+        }
+      }
+    } catch (err) {
+      log(`Warning: failed to load MCP servers from settings.json: ${err}`);
+    }
+  }
+
+  // Build allowed tools list including user MCP server tools
+  const allowedTools = [
+    'Bash',
+    'Read', 'Write', 'Edit', 'Glob', 'Grep',
+    'WebSearch', 'WebFetch',
+    'Task', 'TaskOutput', 'TaskStop',
+    'TeamCreate', 'TeamDelete', 'SendMessage',
+    'TodoWrite', 'ToolSearch', 'Skill',
+    'NotebookEdit',
+    'mcp__nanoclaw__*',
+    ...Object.keys(userMcpServers).map(name => `mcp__${name}__*`),
+  ];
+
   for await (const message of query({
     prompt: stream,
     options: {
@@ -424,16 +454,7 @@ async function runQuery(
       systemPrompt: globalClaudeMd
         ? { type: 'preset' as const, preset: 'claude_code' as const, append: globalClaudeMd }
         : undefined,
-      allowedTools: [
-        'Bash',
-        'Read', 'Write', 'Edit', 'Glob', 'Grep',
-        'WebSearch', 'WebFetch',
-        'Task', 'TaskOutput', 'TaskStop',
-        'TeamCreate', 'TeamDelete', 'SendMessage',
-        'TodoWrite', 'ToolSearch', 'Skill',
-        'NotebookEdit',
-        'mcp__nanoclaw__*'
-      ],
+      allowedTools,
       env: sdkEnv,
       permissionMode: 'bypassPermissions',
       allowDangerouslySkipPermissions: true,
@@ -448,6 +469,7 @@ async function runQuery(
             NANOCLAW_IS_MAIN: containerInput.isMain ? '1' : '0',
           },
         },
+        ...userMcpServers,
       },
       hooks: {
         PreCompact: [{ hooks: [createPreCompactHook(containerInput.assistantName)] }],
