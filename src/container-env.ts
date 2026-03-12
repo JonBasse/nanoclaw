@@ -15,5 +15,12 @@ import { readEnvFile } from './env.js';
  * Add new fork-specific env vars here.
  */
 export function readContainerEnv(): Record<string, string> {
-  return readEnvFile(['GOG_KEYRING_PASSWORD', 'GOG_ACCOUNT', 'TODOIST_API_KEY']);
+  const env = readEnvFile([
+    'GOG_KEYRING_PASSWORD',
+    'GOG_ACCOUNT',
+    'TODOIST_API_KEY',
+  ]);
+  // QMD CLI needs XDG_CACHE_HOME to find the mounted index at /workspace/extra/qmd/
+  env['XDG_CACHE_HOME'] = '/workspace/extra';
+  return env;
 }
