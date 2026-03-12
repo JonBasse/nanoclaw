@@ -16,7 +16,7 @@ import {
   IDLE_TIMEOUT,
   TIMEZONE,
 } from './config.js';
-import { readEnvFile } from './env.js';
+import { readContainerEnv } from './container-env.js';
 import { resolveGroupFolderPath, resolveGroupIpcPath } from './group-folder.js';
 import { logger } from './logger.js';
 import {
@@ -211,14 +211,6 @@ function buildVolumeMounts(
   }
 
   return mounts;
-}
-
-/**
- * Read env vars from .env that should be passed to the container as -e flags.
- * Unlike API secrets (handled by credential proxy), these are visible to Bash subprocesses.
- */
-function readContainerEnv(): Record<string, string> {
-  return readEnvFile(['GOG_KEYRING_PASSWORD', 'GOG_ACCOUNT']);
 }
 
 function buildContainerArgs(
