@@ -59,6 +59,24 @@ RUN printf '#!/bin/bash\nset -e\ncd /app && npx tsc --outDir /tmp/dist 2>&1 >&2\
 # Set ownership to node user (non-root) for writable directories
 RUN chown -R node:node /workspace && chmod 777 /home/node
 
+# === FizBot dependencies ===
+# Todoist CLI + QMD local search
+RUN npm install -g @doist/todoist-cli @tobilu/qmd
+
+# GitHub CLI
+RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+    | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+    > /etc/apt/sources.list.d/github-cli.list \
+    && apt-get update && apt-get install -y gh && rm -rf /var/lib/apt/lists/*
+
+# Google Workspace CLI (gogcli — single Go binary, multi-account)
+# Config + keyring mounted at /workspace/extra/gogcli/ — symlink so gog finds it
+RUN curl -fsSL https://github.com/steipete/gogcli/releases/download/v0.12.0/gogcli_0.12.0_linux_amd64.tar.gz \
+    | tar xz -C /usr/local/bin gog \
+    && mkdir -p /home/node/.config \
+    && ln -s /workspace/extra/gogcli /home/node/.config/gogcli
+
 # Switch to non-root user (required for --dangerously-skip-permissions)
 USER node
 

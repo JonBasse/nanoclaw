@@ -223,6 +223,17 @@ function readSecrets(): Record<string, string> {
   ]);
 }
 
+/**
+ * Read env vars from .env that should be passed to the container as -e flags.
+ * Unlike secrets (SDK-only via stdin), these are visible to Bash subprocesses.
+ */
+function readContainerEnv(): Record<string, string> {
+  return readEnvFile([
+    'GOG_KEYRING_PASSWORD',
+    'GOG_ACCOUNT',
+  ]);
+}
+
 function buildContainerArgs(
   mounts: VolumeMount[],
   containerName: string,
@@ -231,6 +242,11 @@ function buildContainerArgs(
 
   // Pass host timezone so container's local time matches the user's
   args.push('-e', `TZ=${TIMEZONE}`);
+
+  // Pass container-visible env vars (e.g. CLI tool credentials)
+  for (const [key, value] of Object.entries(readContainerEnv())) {
+    args.push('-e', `${key}=${value}`);
+  }
 
   // Run as host user so bind-mounted files are accessible.
   // Skip when running as root (uid 0), as the container's node user (uid 1000),
