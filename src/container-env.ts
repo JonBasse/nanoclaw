@@ -15,5 +15,5 @@ import { readEnvFile } from './env.js';
  * Add new fork-specific env vars here.
  */
 export function readContainerEnv(): Record<string, string> {
-  return readEnvFile(['GOG_KEYRING_PASSWORD', 'GOG_ACCOUNT']);
+  return readEnvFile(['GOG_KEYRING_PASSWORD', 'GOG_ACCOUNT', 'TODOIST_API_KEY']);
 }
