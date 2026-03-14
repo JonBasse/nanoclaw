@@ -61,8 +61,8 @@ RUN printf '#!/bin/bash\nset -e\ncd /app && npx tsc --outDir /tmp/dist 2>&1 >&2\
 RUN chown -R node:node /workspace && chmod 777 /home/node
 
 # === FizBot dependencies ===
-# Todoist CLI + QMD local search
-RUN npm install -g @doist/todoist-cli @tobilu/qmd
+# Todoist CLI + QMD local search + Summarize CLI + Gemini CLI
+RUN npm install -g @doist/todoist-cli @tobilu/qmd @steipete/summarize @google/gemini-cli
 
 # GitHub CLI
 RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
@@ -77,6 +77,12 @@ RUN curl -fsSL https://github.com/steipete/gogcli/releases/download/v0.12.0/gogc
     | tar xz -C /usr/local/bin gog \
     && mkdir -p /home/node/.config \
     && ln -s /workspace/extra/gogcli /home/node/.config/gogcli
+
+# Gemini CLI auth — mount host ~/.gemini/ at /workspace/extra/gemini/, symlink to expected path
+RUN ln -s /workspace/extra/gemini /home/node/.gemini
+
+# Summarize config — mount host ~/.summarize/ at /workspace/extra/summarize/, symlink to expected path
+RUN ln -s /workspace/extra/summarize /home/node/.summarize
 
 # Switch to non-root user (required for --dangerously-skip-permissions)
 USER node
