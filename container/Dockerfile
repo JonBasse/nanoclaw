@@ -78,6 +78,21 @@ RUN curl -fsSL https://github.com/steipete/gogcli/releases/download/v0.12.0/gogc
     && mkdir -p /home/node/.config \
     && ln -s /workspace/extra/gogcli /home/node/.config/gogcli
 
+# Fix: summarize passes prompt via --prompt CLI arg to gemini, which hits OS ARG_MAX
+# on large transcripts (E2BIG). Patch to use stdin instead (gemini reads stdin when piped).
+# Upstream issue: https://github.com/steipete/summarize — pending PR.
+RUN node -e " \
+  const fs = require('fs'); \
+  const f = '/usr/local/lib/node_modules/@steipete/summarize/dist/esm/llm/cli.js'; \
+  let s = fs.readFileSync(f, 'utf8'); \
+  s = s.replace( \
+    'if (provider === \"gemini\") {\\n        args.push(\"--prompt\", prompt);\\n        return \"\";\\n    }', \
+    'if (provider === \"gemini\") {\\n        // patched: use stdin instead of --prompt to avoid E2BIG\\n        return prompt;\\n    }' \
+  ); \
+  fs.writeFileSync(f, s); \
+  console.log('Patched summarize gemini handler'); \
+"
+
 # Gemini CLI auth — mount host ~/.gemini/ at /workspace/extra/gemini/, symlink to expected path
 RUN ln -s /workspace/extra/gemini /home/node/.gemini
 
