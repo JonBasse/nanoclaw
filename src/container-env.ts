@@ -22,5 +22,7 @@ export function readContainerEnv(): Record<string, string> {
   ]);
   // QMD CLI needs XDG_CACHE_HOME to find the mounted index at /workspace/extra/qmd/
   env['XDG_CACHE_HOME'] = '/workspace/extra';
+  // Skills detect NanoClaw context via this env var to adjust defaults (e.g., output channels)
+  env['NANOCLAW'] = '1';
   return env;
 }
